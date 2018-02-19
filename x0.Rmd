@@ -1,0 +1,92 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+
+```{r}
+
+library(ggplot2)
+
+
+# take a table, return a list
+fn0 <- function(it) {
+  result <- list()
+  result[["No Law"]] = 0
+  result[["Statutory Ban"]] = 0
+  result[["Constitutional Ban"]] = 0
+  result[["Legal"]] = 0
+  
+  for (k in 1:(dim(it))) result[[names(it)[[k]]]] = it[[k]]
+  
+  result
+  
+}
+# take a list and return a data frame
+fn1 <- function(it, y) {
+  
+  data.frame(year=y, nolaw=it[["No Law"]],
+                       statutory=it[["Statutory Ban"]],
+                       constitutional=it[["Constitutional Ban"]],
+                       legal=it[["Legal"]])
+  
+  
+}
+
+# take the 5 accross data frame
+# and make it a 3 accross data frame (normalized)
+# for use in ggplot stacked line example
+fn2 <- function(it) {
+  result <- data.frame(year=it$year, states=it$nolaw, legality="No Law")
+  result <- result %>% rbind( data.frame(year=it$year, states=it$statutory, legality="Statutory Ban"))
+  result <- result %>% rbind( data.frame(year=it$year, states=it$constitutional, legality="Constitutional Ban"))
+  result <- result %>% rbind( data.frame(year=it$year, states=it$legal, legality="Legal"))
+  
+  result
+}
+
+
+```
+
+
+
+```{r}
+
+library(dplyr)
+
+ssm <- read.csv("~/Documents/stt/samesmarriage/ssm.csv")
+
+sometables <- list()
+
+for (k in 3:23) sometables[[1992+k]] = fn0( table(ssm[[k]]) )
+
+
+x0 <- fn1(sometables[[1995]], 1995)
+
+for (k in 1996:2015) x0 <- x0 %>% rbind(fn1( sometables[[k]], k))
+
+
+x1 <- fn2(x0[1,])
+for (k in 2:dim(x0)[1]) x1 <- x1 %>% rbind( fn2(x0[k,]))
+
+
+
+```
+
+
+```{r}
+
+# plot(x0$legal~x0$year, type="l")
+
+
+
+
+ggplot(x1, aes(x = year, y = states, fill=legality)) + geom_area(position = 'stack')
+
+``` 
+
+
+
